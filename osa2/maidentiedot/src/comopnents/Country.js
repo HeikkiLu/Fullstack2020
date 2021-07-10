@@ -1,25 +1,32 @@
-const Countries = ({country, handleShowMore}) => {
+import dataService from "../services/dataService"
+import Weather from "./Weather"
+
+const getCapitalWeather = capital => {
+    console.log(dataService.getWeather(capital))
+}
+
+const Countries = ({ country, handleShowMore }) => {
     return (
-        <div> 
+        <div>
             {country.name} <button onClick={handleShowMore}> Show </button>
         </div>
     )
 }
 
-const Country = props => {
+const Country = ({country}) => {
     return (
         <div>
-            <h1>{props.country.name}</h1>
+            <h1>{country.name}</h1>
             <div>
-                Capital:
+                Capital: {country.capital}
             </div>
             <div>
-                Population:
+                Population: {country.population}
             </div>
             <h2>Languages</h2>
             <div>
                 <ul>
-                    {props.country.languages.map((language, i) => {
+                    {country.languages.map((language, i) => {
                         return (
                             <li key={i}>{language.name}</li>
                         )
@@ -28,15 +35,16 @@ const Country = props => {
                 </ul>
             </div>
             <div>
-                <img src={props.country.flag} alt={`Flag of ${props.country.flag}`} width={200} height={100} />
+                <img src={country.flag} alt={`Flag of ${country.flag}`} width={200} height={100} />
             </div>
+            <Weather capital={country.capital} />
         </div>
     )
 }
 
-const ListCountries = ({searchTerm, countries, handleShowMore}) => {
+const ListCountries = ({ searchTerm, countries, handleShowMore }) => {
     let newCountries = []
-    
+
     if (searchTerm !== '') {
         countries.forEach(country => {
             if (country.name.toLowerCase().includes(searchTerm.toLowerCase())) {

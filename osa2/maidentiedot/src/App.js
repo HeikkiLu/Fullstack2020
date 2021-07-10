@@ -1,14 +1,13 @@
-import axios from 'axios';
 import { useState, useEffect } from 'react';
 import ListCountries from './comopnents/Country'
+import dataService from './services/dataService'
 
 const App = () => {
   const [country, setCountry] = useState('')
   const [countries, setCountries] = useState([])
 
   const searchCountry = () => {
-    axios
-      .get(`https://restcountries.eu/rest/v2/all`)
+    dataService.getCountries()
       .then(response => {
         setCountries(response.data)
       }
