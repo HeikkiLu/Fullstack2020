@@ -6,7 +6,7 @@ const App = () => {
   const [country, setCountry] = useState('')
   const [countries, setCountries] = useState([])
 
-  const searchCountry = () => {
+  const searchCountry = () => { 
     dataService.getCountries()
       .then(response => {
         setCountries(response.data)
