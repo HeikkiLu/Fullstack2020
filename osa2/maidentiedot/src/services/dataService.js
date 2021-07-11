@@ -9,7 +9,6 @@ const getCountries = () => {
 
 const getWeather = capital => {
     let query = url_start + capital + url_end + api_key
-    console.log(query)
     return axios.get(query)
 }
 
