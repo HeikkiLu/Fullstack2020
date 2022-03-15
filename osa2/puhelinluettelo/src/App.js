@@ -3,12 +3,14 @@ import Contacts from './components/Contacts'
 import Search from './components/SearchContact'
 import ContactForm from './components/ContactForm'
 import PersonService from './services/PersonService'
+import Notification from './components/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [notification, setNotification] = useState({})
 
   const getPersons = () => {
     PersonService.getAll()
@@ -33,17 +35,18 @@ const App = () => {
         const person = persons.find(person => person.name === newName)
         PersonService.update(person.id, personObject)
         getPersons()
+        handleNotification(`Updated ${newName}`, 'success')
         setNewName('')
         setNewNumber('')
       }
     }
     else {
       PersonService.create(personObject)
-        .then(response => {
-          getPersons()
-          setNewName('')
-          setNewNumber('')
-        })
+      getPersons()
+      handleNotification(`Added ${newName}`, 'success')
+      setNewName('')
+      setNewNumber('')
+
     }
   }
 
@@ -60,14 +63,24 @@ const App = () => {
   const handleDelete = (id, name) => {
     let confirmation = window.confirm(`Delete ${name} from phonebook?`)
     if (confirmation) {
-      PersonService.remove(id)
+      PersonService.remove(id).catch(error => {
+        handleNotification(`${name} has been already removed`, 'error')
+      })
       getPersons()
+      handleNotification(`Removed ${name}`, 'success')
     }
+  }
+  const handleNotification = (message, type) => {
+    setNotification({ msg: message, type: type })
+    setTimeout(() => {
+      setNotification({})
+    }, 5000)
   }
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notification.msg} type={notification.type} />
       <h2>Search person from phonebook</h2>
       <Search searchTerm={searchTerm} handleSearchChange={handleSearchChange} />
       <h2>Add new person to phonebook</h2>
