@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Contacts from './components/Contacts'
 import Search from './components/SearchContact'
 import ContactForm from './components/ContactForm'
-import axios from 'axios'
+import PersonService from './services/PersonService'
 
 const App = () => {
   const [persons, setPersons] = useState([])
@@ -11,11 +11,10 @@ const App = () => {
   const [searchTerm, setSearchTerm] = useState('')
 
   const getPersons = () => {
-    axios
-    .get('http://localhost:3001/persons')
-    .then(response => {
-      setPersons(response.data)
-    })
+    PersonService.getAll()
+      .then(response => {
+        setPersons(response.data)
+      })
   }
 
   useEffect(getPersons, [])
@@ -26,12 +25,25 @@ const App = () => {
       name: newName,
       number: newNumber
     }
-    if (persons.some(e => e.name === newName)) {
+    if (persons.some(e => e.name === newName && e.number === newNumber)) {
       alert(`${newName} already exists in the phonebook!`)
-    } else {
-      setPersons(persons.concat(personObject))
-      setNewName('')
-      setNewNumber('')
+    } else if (persons.some(e => e.name === newName && e.number != newNumber)) {
+      let confirmation = window.confirm(`${newName} already exists in the phonebook, replace the old number with a new one?`)
+      if (confirmation) {
+        const person = persons.find(person => person.name === newName)
+        PersonService.update(person.id, personObject)
+        getPersons()
+        setNewName('')
+        setNewNumber('')
+      }
+    }
+    else {
+      PersonService.create(personObject)
+        .then(response => {
+          getPersons()
+          setNewName('')
+          setNewNumber('')
+        })
     }
   }
 
@@ -45,6 +57,13 @@ const App = () => {
   const hanleNumberChange = event => {
     setNewNumber(event.target.value)
   }
+  const handleDelete = (id, name) => {
+    let confirmation = window.confirm(`Delete ${name} from phonebook?`)
+    if (confirmation) {
+      PersonService.remove(id)
+      getPersons()
+    }
+  }
 
   return (
     <div>
@@ -52,15 +71,15 @@ const App = () => {
       <h2>Search person from phonebook</h2>
       <Search searchTerm={searchTerm} handleSearchChange={handleSearchChange} />
       <h2>Add new person to phonebook</h2>
-      <ContactForm 
-        addPerson={addPerson} 
-        newName={newName} 
-        newNumber={newNumber} 
-        handleNameChange={handleNameChange} 
-        handleNumberChange={hanleNumberChange} 
+      <ContactForm
+        addPerson={addPerson}
+        newName={newName}
+        newNumber={newNumber}
+        handleNameChange={handleNameChange}
+        handleNumberChange={hanleNumberChange}
       />
       <h2>Numbers</h2>
-      <Contacts persons={persons} searchTerm={searchTerm} />
+      <Contacts persons={persons} searchTerm={searchTerm} handleDelete={handleDelete} />
     </div>
   )
 }
