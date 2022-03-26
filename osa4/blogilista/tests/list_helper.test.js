@@ -7,6 +7,18 @@ test('dummy returns one', () => {
 })
 
 describe('total likes', () => {
+
+  const listWithOneBlog = [
+    {
+      _id: '5a422a851b54a676234d17f7',
+      title: 'React patterns',
+      author: 'Michael Chan',
+      url: 'https://reactpatterns.com/',
+      likes: 7,
+      __v: 0
+    }
+  ]
+
   const blogs = [
     {
       _id: '5a422a851b54a676234d17f7',
@@ -59,12 +71,22 @@ describe('total likes', () => {
   ]
 
   test('when list has only one blog equals the likes of that', () => {
-    const result = listHelper.getTotalLikes(blogs)
-    expect(result).toBe(36)
+    const result = listHelper.getTotalLikes(listWithOneBlog)
+    expect(result).toBe(7)
   })
 
   test('return blog with most likes', () => {
     const result = listHelper.getFavourite(blogs)
     expect(result).toEqual(blogs[2])
+  })
+
+  test('return blogger with most blogs', () => {
+    const result = listHelper.mostBlogs(blogs)
+    expect(result.author).toBe('Robert C. Martin')
+  })
+
+  test('return blogger with most likes', () => {
+    const result = listHelper.mostLikes(blogs)
+    expect(result.author).toBe('Edsger W. Dijkstra')
   })
 })
