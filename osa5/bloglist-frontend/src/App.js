@@ -10,34 +10,35 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [errorMessage, setErrorMessage] = useState(null)
+  const [newTitle, setNewTitle] = useState('')
+  const [newAuthor, setNewAuthor] = useState('')
+  const [newUrl, setNewUrl] = useState('')
+  const [notification, setNotification] = useState({ message: null, type: null })
 
   useEffect(() => {
-    blogService.getAll().then(blogs =>
-      setBlogs(blogs)
-    )
+    getBlogs()
   }, [])
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedUser')
     if (loggedUserJSON) {
       const user = JSON.parse(loggedUserJSON)
+      blogService.setToken(user.token)
       setUser(user)
     }
   }, [])
 
   const handleLogin = async event => {
     event.preventDefault()
-
     try {
       const user = await loginService.login({ username, password })
       setUser(user)
+      blogService.setToken(user.token)
       window.localStorage.setItem('loggedUser', JSON.stringify(user))
       setUsername('')
       setPassword('')
     } catch (exception) {
-      setErrorMessage('Invalid credentials')
-      setTimeout(() => { setErrorMessage(null) }, 5000)
+      handleNotification('wrong username or password', 'error')
       setUsername('')
       setPassword('')
     }
@@ -48,12 +49,53 @@ const App = () => {
     window.location.reload(false)
   }
 
+  const getBlogs = async () => {
+    const blogs = await blogService.getAll()
+    setBlogs(blogs)
+  }
+
+  const handleTitleChange = (event) => {
+    setNewTitle(event.target.value)
+  }
+
+  const handleAuthorChange = (event) => {
+    setNewAuthor(event.target.value)
+  }
+
+  const handleUrlChange = (event) => {
+    setNewUrl(event.target.value)
+  }
+
+  const addBlog = event => {
+    event.preventDefault()
+    try {
+      blogService.createBlog(newTitle, newAuthor, newUrl, user)
+        .then(returnedBlog => {
+          setBlogs(blogs.concat(returnedBlog))
+          handleNotification(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 'success')
+        })
+    } catch (exception) {
+      console.log(exception)
+      handleNotification('Something went wrong', 'error')
+    }
+    setNewTitle('')
+    setNewAuthor('')
+    setNewUrl('')
+  }
+
+  const handleNotification = (message, type) => {
+    setNotification({ message: message, type: type })
+    setTimeout(() => {
+      setNotification({})
+    }, 5000)
+  }
+
   if (user === null) {
     return (
       <div>
         <h2>Log in</h2>
         <form onSubmit={handleLogin}>
-          <Notification message={errorMessage} />
+          <Notification type={notification.type} message={notification.message} />
           <div>
             username
             <input
@@ -85,10 +127,11 @@ const App = () => {
       <p>{user.name} logged in <button onClick={handleLogout}>Log out</button></p>
 
       <div>
-        <CreateBlogForm user={user} />
+        <Notification type={notification.type} message={notification.message} />
+        <CreateBlogForm addBlog={addBlog} newAuthor={newAuthor} newTitle={newTitle} newUrl={newUrl} handleAuthorChange={handleAuthorChange}
+          handleTitleChange={handleTitleChange} handleUrlChange={handleUrlChange} />
       </div>
 
-      <Notification message={errorMessage} />
       {blogs.map(blog =>
         <Blog key={blog.id} blog={blog} />
       )}
