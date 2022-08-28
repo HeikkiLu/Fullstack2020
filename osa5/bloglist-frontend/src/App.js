@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import Blog from './components/Blog'
 import Notification from './components/Notification'
 import CreateBlogForm from './components/CreateBlogForm'
+import Togglable from './components/Togglable'
 import blogService from './services/blogs'
 import loginService from './services/login'
 
@@ -14,6 +15,8 @@ const App = () => {
   const [newAuthor, setNewAuthor] = useState('')
   const [newUrl, setNewUrl] = useState('')
   const [notification, setNotification] = useState({ message: null, type: null })
+
+  const blogFormRef = React.createRef()
 
   useEffect(() => {
     getBlogs()
@@ -68,8 +71,16 @@ const App = () => {
 
   const addBlog = event => {
     event.preventDefault()
+    blogFormRef.current.toggleVisibility()
+
+    const newBlog = {
+      title: newTitle,
+      author: newAuthor,
+      url: newUrl,
+    }
+
     try {
-      blogService.createBlog(newTitle, newAuthor, newUrl, user)
+      blogService.createBlog(newBlog)
         .then(returnedBlog => {
           setBlogs(blogs.concat(returnedBlog))
           handleNotification(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 'success')
@@ -81,6 +92,24 @@ const App = () => {
     setNewTitle('')
     setNewAuthor('')
     setNewUrl('')
+  }
+
+  const likeBlog = (id) => {
+    const likes = blogs.find(blog => blog.id === id).likes + 1
+    const blog = {
+      likes: likes
+    }
+    blogService.updateBlog(id, blog)
+    setBlogs(blogs.map(blog => blog.id === id ? { ...blog, likes: likes } : blog))
+  }
+
+  const removeBlog = (id) => {
+    const blog = blogs.find(blog => blog.id === id)
+    if (window.confirm(`Remove blog ${blog.title} by ${blog.author}?`)) {
+      blogService.deleteBlog(id)
+      setBlogs(blogs.filter(blog => blog.id !== id))
+      handleNotification(`Blog ${blog.title} by ${blog.author} removed`, 'success')
+    }
   }
 
   const handleNotification = (message, type) => {
@@ -128,13 +157,16 @@ const App = () => {
 
       <div>
         <Notification type={notification.type} message={notification.message} />
-        <CreateBlogForm addBlog={addBlog} newAuthor={newAuthor} newTitle={newTitle} newUrl={newUrl} handleAuthorChange={handleAuthorChange}
-          handleTitleChange={handleTitleChange} handleUrlChange={handleUrlChange} />
+        <Togglable buttonLabel="Create new blog" cancelButtonLabel="Cancel" ref={blogFormRef}>
+          <CreateBlogForm addBlog={addBlog} newAuthor={newAuthor} newTitle={newTitle} newUrl={newUrl} handleAuthorChange={handleAuthorChange}
+            handleTitleChange={handleTitleChange} handleUrlChange={handleUrlChange} />
+        </Togglable>
       </div>
 
-      {blogs.map(blog =>
-        <Blog key={blog.id} blog={blog} />
-      )}
+      {
+        blogs.sort((a, b) => b.likes - a.likes).map(blog =>
+          <Blog key={blog.id} blog={blog} likeBlog={likeBlog} removeBlog={removeBlog} user={user}/>
+        )}
     </div>
   )
 }
