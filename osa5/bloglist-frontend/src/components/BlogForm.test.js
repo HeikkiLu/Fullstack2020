@@ -4,18 +4,22 @@ import '@testing-library/jest-dom/extend-expect'
 import BlogFrom from './BlogForm'
 import userEvent from '@testing-library/user-event'
 
-test('<BlogForrm /> updates parent state and calls onSubmit', async () => {
+
+test('<BlogForm /> updates parent state and calls onSubmit', async () => {
   const user = userEvent.setup()
-  const createBlog = jest.fn()
+  const onSubmit = jest.fn()
 
-  render(<BlogFrom createBlog={createBlog} />)
+  render(<BlogFrom createBlog={onSubmit} />)
 
-  const input = screen.getByPlaceholderText('Blog Title')
-  const creteBtn = screen.getByText('Create Blog')
+  const titleInputTxt = 'Blog Title'
 
-  await user.type(input, 'Test Blog')
-  await user.click(creteBtn)
+  const titleInput = screen.getByPlaceholderText('Title')
+  const createBtn = screen.getByText('Create Blog')
 
-  expect(createBlog).toHaveBeenCalled() // fails but why
-  expect(createBlog.mock.calls[0][0].title).toBe('Test Blog')
+  await user.type(titleInput, titleInputTxt)
+  await user.click(createBtn)
+
+  expect(onSubmit).toHaveBeenCalledTimes(1)
+  expect(onSubmit.mock.calls[0][0].title).toBe(titleInputTxt)
 })
+

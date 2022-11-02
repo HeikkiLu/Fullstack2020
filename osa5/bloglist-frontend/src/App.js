@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Blog from './components/Blog'
 import Notification from './components/Notification'
-import CreateBlogForm from './components/CreateBlogForm'
+import CreateBlogForm from './components/BlogForm'
 import Togglable from './components/Togglable'
 import blogService from './services/blogs'
 import loginService from './services/login'
@@ -11,9 +11,6 @@ const App = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [user, setUser] = useState(null)
-  const [newTitle, setNewTitle] = useState('')
-  const [newAuthor, setNewAuthor] = useState('')
-  const [newUrl, setNewUrl] = useState('')
   const [notification, setNotification] = useState({ message: null, type: null })
 
   const blogFormRef = React.createRef()
@@ -28,6 +25,7 @@ const App = () => {
       const user = JSON.parse(loggedUserJSON)
       blogService.setToken(user.token)
       setUser(user)
+      getBlogs()
     }
   }, [])
 
@@ -57,41 +55,15 @@ const App = () => {
     setBlogs(blogs)
   }
 
-  const handleTitleChange = (event) => {
-    setNewTitle(event.target.value)
-  }
-
-  const handleAuthorChange = (event) => {
-    setNewAuthor(event.target.value)
-  }
-
-  const handleUrlChange = (event) => {
-    setNewUrl(event.target.value)
-  }
-
-  const addBlog = event => {
-    event.preventDefault()
-    blogFormRef.current.toggleVisibility()
-
-    const newBlog = {
-      title: newTitle,
-      author: newAuthor,
-      url: newUrl,
-    }
-
+  const createBlog = async blog => {
     try {
-      blogService.createBlog(newBlog)
-        .then(returnedBlog => {
-          setBlogs(blogs.concat(returnedBlog))
-          handleNotification(`a new blog ${returnedBlog.title} by ${returnedBlog.author} added`, 'success')
-        })
-    } catch (exception) {
-      console.log(exception)
+      blogFormRef.current.toggleVisibility()
+      const createdBlog = await blogService.createBlog(blog)
+      setBlogs(blogs.concat(createdBlog))
+      handleNotification(`a new blog ${createdBlog.title} by ${createdBlog.author} added`, 'success')
+    } catch(exception) {
       handleNotification('Something went wrong', 'error')
     }
-    setNewTitle('')
-    setNewAuthor('')
-    setNewUrl('')
   }
 
   const likeBlog = (id) => {
@@ -119,56 +91,55 @@ const App = () => {
     }, 5000)
   }
 
-  if (user === null) {
-    return (
-      <div>
-        <h2>Log in</h2>
-        <form onSubmit={handleLogin}>
-          <Notification type={notification.type} message={notification.message} />
-          <div>
-            username
-            <input
-              type="text"
-              value={username}
-              name="Username"
-              onChange={({ target }) => setUsername(target.value)}
-            />
-          </div>
-          <div>
-            password
-            <input
-              type="password"
-              value={password}
-              name="Password"
-              onChange={({ target }) => setPassword(target.value)}
-            />
-          </div>
-          <button type='submit'>Login</button>
-        </form>
-      </div>
-    )
-  }
-
   return (
     <div>
       <h2>Blogs</h2>
+      <Notification type={notification.type} message={notification.message} />
+      {user === null ?
+        <div>
+          <h2>Log in</h2>
+          <form onSubmit={handleLogin}>
+            <Notification type={notification.type} message={notification.message} />
+            <div>
+              username
+              <input
+                type="text"
+                value={username}
+                name="Username"
+                onChange={({ target }) => setUsername(target.value)}
+              />
+            </div>
+            <div>
+              password
+              <input
+                type="password"
+                value={password}
+                name="Password"
+                onChange={({ target }) => setPassword(target.value)}
+              />
+            </div>
+            <button type='submit'>Login</button>
+          </form>
+        </div> :
+        <div>
+          <p>{user.name} logged in <button onClick={handleLogout}>Log out</button></p>
 
-      <p>{user.name} logged in <button onClick={handleLogout}>Log out</button></p>
+          <div>
+            <Notification type={notification.type} message={notification.message} />
+            <Togglable buttonLabel="Create new blog" cancelButtonLabel="Cancel" ref={blogFormRef}>
+              <CreateBlogForm createBlog={createBlog} />
+            </Togglable>
+          </div>
 
-      <div>
-        <Notification type={notification.type} message={notification.message} />
-        <Togglable buttonLabel="Create new blog" cancelButtonLabel="Cancel" ref={blogFormRef}>
-          <CreateBlogForm addBlog={addBlog} newAuthor={newAuthor} newTitle={newTitle} newUrl={newUrl} handleAuthorChange={handleAuthorChange}
-            handleTitleChange={handleTitleChange} handleUrlChange={handleUrlChange} />
-        </Togglable>
-      </div>
-
-      {
-        blogs.sort((a, b) => b.likes - a.likes).map(blog =>
-          <Blog key={blog.id} blog={blog} likeBlog={likeBlog} removeBlog={removeBlog} user={user}/>
-        )}
+          {
+            blogs.sort((a, b) => b.likes - a.likes).map(blog =>
+              <Blog key={blog.id} blog={blog} likeBlog={likeBlog} removeBlog={removeBlog} user={user} />
+            )}
+        </div>
+      }
     </div>
   )
 }
+
 
 export default App
